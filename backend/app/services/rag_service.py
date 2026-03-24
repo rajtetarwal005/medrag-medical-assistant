@@ -4,8 +4,13 @@ from langchain_core.messages import HumanMessage, AIMessage
 from app.utils.redis_memory import get_chat_history, save_chat_history
 
 from app.services.retrieval_service import get_hybrid_retriever
-from app.services.rerank_service import rerank_documents
 from app.services.llm_service import get_llm
+import os
+
+USE_RERANK = os.getenv("USE_RERANK", "false") == "true"
+
+if USE_RERANK:
+    from app.services.rerank_service import rerank_documents
 
 
 # ---------------------------------------------------------
@@ -157,7 +162,10 @@ Standalone Question:
             unique_docs.append(doc)
 
     # ---- Step 3: rerank ----
-    top_docs = rerank_documents(standalone_query, unique_docs, top_n=4)
+    if USE_RERANK:
+        top_docs = rerank_documents(standalone_query, unique_docs, top_n=4)
+    else:
+        top_docs = unique_docs[:4]
 
     # ---- safety check ----
     if not top_docs:

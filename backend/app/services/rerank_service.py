@@ -1,4 +1,6 @@
-from sentence_transformers import CrossEncoder
+# Singleton model (load once)
+_reranker_model = None
+
 
 # Singleton model (load once)
 _reranker_model = None
@@ -8,6 +10,9 @@ def get_reranker():
     global _reranker_model
 
     if _reranker_model is None:
+        # ✅ IMPORT INSIDE FUNCTION
+        from sentence_transformers import CrossEncoder
+
         _reranker_model = CrossEncoder(
             "cross-encoder/ms-marco-MiniLM-L-6-v2"
         )
