@@ -1,5 +1,6 @@
-from fastapi import APIRouter
-from pydantic import BaseModel   
+from fastapi import APIRouter, UploadFile, File, Form
+import os
+
 from app.schemas.schema import QueryRequest, QueryResponse
 from app.services.ingestion_service import run_ingestion
 from app.services.rag_service import run_rag
@@ -7,6 +8,7 @@ from app.services.rag_service import run_rag
 router = APIRouter()
 
 
+# -------------------- ASK API --------------------
 @router.post("/ask", response_model=QueryResponse)
 def ask_question(request: QueryRequest):
     answer, docs = run_rag(
@@ -14,7 +16,6 @@ def ask_question(request: QueryRequest):
         session_id=request.session_id
     )
 
-    # Handle sources safely
     sources = list(set(
         doc.metadata.get("source", "unknown") for doc in docs
     )) if docs else []
@@ -25,11 +26,21 @@ def ask_question(request: QueryRequest):
     )
 
 
-class UploadRequest(BaseModel):
-    file_path: str
-
-
+# -------------------- UPLOAD API (FIXED) --------------------
 @router.post("/upload")
-def upload_file(request: UploadRequest):
-    run_ingestion(request.file_path)
+async def upload_file(
+    file: UploadFile = File(...),
+    session_id: str = Form(...)
+):
+    os.makedirs("uploaded_docs", exist_ok=True)
+
+    file_path = f"uploaded_docs/{file.filename}"
+
+    # Save file
+    with open(file_path, "wb") as f:
+        f.write(await file.read())
+
+    # Run ingestion
+    run_ingestion(file_path)
+
     return {"message": "File processed successfully"}

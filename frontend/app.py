@@ -3,6 +3,7 @@ import requests
 import os
 import uuid
 
+API_URL = "https://medrag-backend-44n5.onrender.com"
 # ---------------------------------------------------------
 # Page Config
 # ---------------------------------------------------------
@@ -40,12 +41,18 @@ if uploaded_file is not None and "file_uploaded" not in st.session_state:
 
     with st.spinner("Processing document..."):
         response = requests.post(
-            "http://127.0.0.1:8000/upload",
-            json={
-                "file_path": file_path,
-                "session_id": session_id   # 🔥 important
-            }
-        )
+            f"{API_URL}/upload",
+            files={
+                "file": (
+                    uploaded_file.name,
+                    uploaded_file.getvalue(),
+                    "application/pdf"
+                )
+        },
+        data={
+            "session_id": session_id
+        }
+    )
 
     if response.status_code == 200:
         st.success("Document processed and ready!")
