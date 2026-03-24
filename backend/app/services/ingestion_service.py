@@ -1,61 +1,61 @@
-    import os
-    from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
-    from langchain_huggingface import HuggingFaceEmbeddings
-    from langchain_community.vectorstores import FAISS
+import os
 
-    from app.core.config import settings
-    from app.services.retrieval_service import get_embedding_model
+from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
 
-    # ---------------------------------------------------------
-    # Load documents
-    # ---------------------------------------------------------
-    def load_documents():
-        loader = DirectoryLoader(
-            settings.DATA_PATH,
-            glob="*.pdf",
-            loader_cls=PyPDFLoader
-        )
-        return loader.load()
+from app.core.config import settings
 
 
-    # ---------------------------------------------------------
-    # Split documents
-    # ---------------------------------------------------------
-    def split_documents(documents):
-        splitter = RecursiveCharacterTextSplitter(
-            chunk_size=500,
-            chunk_overlap=50
-        )
-        return splitter.split_documents(documents)
+# ---------------------------------------------------------
+# Load documents (optional utility)
+# ---------------------------------------------------------
+def load_documents():
+    loader = DirectoryLoader(
+        settings.DATA_PATH,
+        glob="*.pdf",
+        loader_cls=PyPDFLoader
+    )
+    return loader.load()
 
 
-    # ---------------------------------------------------------
-    # Embedding model
-    # ---------------------------------------------------------
-    def get_embedding_model():
-        return HuggingFaceEmbeddings(
-            model_name=settings.EMBEDDING_MODEL
-        )
+# ---------------------------------------------------------
+# Split documents
+# ---------------------------------------------------------
+def split_documents(documents):
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=50
+    )
+    return splitter.split_documents(documents)
 
 
-    # ---------------------------------------------------------
-    # Build FAISS
-    # ---------------------------------------------------------
-    def build_vectorstore(chunks):
-        embedding_model = get_embedding_model()
-
-        db = FAISS.from_documents(chunks, embedding_model)
-        db.save_local(settings.DB_FAISS_PATH)
-
-        return db
+# ---------------------------------------------------------
+# Embedding model
+# ---------------------------------------------------------
+def get_embedding_model():
+    return HuggingFaceEmbeddings(
+        model_name=settings.EMBEDDING_MODEL
+    )
 
 
-    # ---------------------------------------------------------
-    # Full pipeline
-    # ---------------------------------------------------------
-    def run_ingestion(file_path: str, session_id: str = "default"):
+# ---------------------------------------------------------
+# Build FAISS (optional utility)
+# ---------------------------------------------------------
+def build_vectorstore(chunks):
+    embedding_model = get_embedding_model()
 
+    db = FAISS.from_documents(chunks, embedding_model)
+    db.save_local(settings.DB_FAISS_PATH)
+
+    return db
+
+
+# ---------------------------------------------------------
+# MAIN INGESTION PIPELINE
+# ---------------------------------------------------------
+def run_ingestion(file_path: str, session_id: str = "default"):
     try:
         # ---- Load PDF ----
         loader = PyPDFLoader(file_path)
@@ -73,13 +73,14 @@
             chunk.metadata["source"] = file_path
             chunk.metadata["user_id"] = session_id
 
+        # ---- Embedding ----
         embedding = get_embedding_model()
         DB_PATH = settings.DB_FAISS_PATH
 
-        # ✅ CREATE DIRECTORY IF NOT EXISTS (CRITICAL)
+        # ---- Ensure directory exists ----
         os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
-        # ---- Load or create DB ----
+        # ---- Load or create vector DB ----
         if os.path.exists(DB_PATH) and os.listdir(DB_PATH):
             db = FAISS.load_local(
                 DB_PATH,
@@ -96,5 +97,12 @@
         return {"message": "Ingestion completed"}
 
     except Exception as e:
-        print("INGESTION ERROR:", str(e))  # 🔥 IMPORTANT FOR DEBUG
+        print("INGESTION ERROR:", str(e))
         raise e
+
+
+# ---------------------------------------------------------
+# Run standalone (optional)
+# ---------------------------------------------------------
+if __name__ == "__main__":
+    print("Running ingestion...")
