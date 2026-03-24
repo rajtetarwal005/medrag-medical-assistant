@@ -9,8 +9,4 @@ class QueryRequest(BaseModel):
 
 class QueryResponse(BaseModel):
     answer: str
-    sources: List[str]
-
-class UploadRequest(BaseModel):
-    file_path: str
-    session_id: str    
+    sources: List[str]   
