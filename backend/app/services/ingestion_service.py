@@ -17,7 +17,7 @@ def load_documents():
         glob="*.pdf",
         loader_cls=PyPDFLoader
     )
-    return loader.load()
+    return loader.load()[:10]  # 🔥 limit to 10 documents for testing
 
 
 # ---------------------------------------------------------
@@ -25,8 +25,8 @@ def load_documents():
 # ---------------------------------------------------------
 def split_documents(documents):
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=50
+        chunk_size=1000,
+        chunk_overlap=100
     )
     return splitter.split_documents(documents)
 
@@ -59,12 +59,12 @@ def run_ingestion(file_path: str, session_id: str = "default"):
     try:
         # ---- Load PDF ----
         loader = PyPDFLoader(file_path)
-        documents = loader.load()
+        documents = loader.load()[:10]  # 🔥 limit to 10 pages for testing
 
         # ---- Split ----
         splitter = RecursiveCharacterTextSplitter(
-            chunk_size=500,
-            chunk_overlap=50
+            chunk_size=1000,
+            chunk_overlap=100
         )
         chunks = splitter.split_documents(documents)
 
