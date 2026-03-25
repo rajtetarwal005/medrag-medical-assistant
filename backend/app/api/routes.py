@@ -26,21 +26,23 @@ def ask_question(request: QueryRequest):
     )
 
 
-# -------------------- UPLOAD API (FIXED) --------------------
+# -------------------- UPLOAD API (FIXED FINAL) --------------------
 @router.post("/upload")
 async def upload_file(
     file: UploadFile = File(...),
     session_id: str = Form(...)
 ):
-    os.makedirs("uploaded_docs", exist_ok=True)
+    # Create folder if not exists
+    upload_dir = "uploaded_docs"
+    os.makedirs(upload_dir, exist_ok=True)
 
-    file_path = f"uploaded_docs/{file.filename}"
+    file_path = os.path.join(upload_dir, file.filename)
 
     # Save file
     with open(file_path, "wb") as f:
         f.write(await file.read())
 
-    # Run ingestion
-    run_ingestion(file_path)
+    #  CRITICAL FIX: PASS session_id
+    run_ingestion(file_path, session_id=session_id)
 
     return {"message": "File processed successfully"}

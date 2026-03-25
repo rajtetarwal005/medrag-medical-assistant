@@ -5,7 +5,7 @@ import uuid
 # ------------------------------
 # Backend URL
 # ------------------------------
-API_URL = "https://medrag-backend-44n5.onrender.com"
+API_URL = API_URL = "http://127.0.0.1:8000"
 
 # ------------------------------
 # Page Config

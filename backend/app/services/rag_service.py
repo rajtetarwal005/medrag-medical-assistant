@@ -149,9 +149,17 @@ Standalone Question:
     print("Rewritten:", standalone_query)
 
     # ---- Step 2: retrieval ----
-    vector_ret, bm25_ret = get_hybrid_retriever()
-    docs = vector_ret.invoke(standalone_query) + bm25_ret.invoke(standalone_query)
+    
+    vector_ret, bm25_ret = get_hybrid_retriever(session_id)
 
+    vector_docs = vector_ret.invoke(standalone_query)
+
+    bm25_docs = []
+    if bm25_ret:
+        bm25_docs = bm25_ret.invoke(standalone_query)
+
+    docs = vector_docs + bm25_docs
+    
     # ---- deduplicate ----
     seen = set()
     unique_docs = []
@@ -162,10 +170,18 @@ Standalone Question:
             unique_docs.append(doc)
 
     # ---- Step 3: rerank ----
+   
     if USE_RERANK:
         top_docs = rerank_documents(standalone_query, unique_docs, top_n=4)
     else:
         top_docs = unique_docs[:4]
+
+    # 🔥 DEBUG START
+    print("\n===== DEBUG: Retrieved Sources =====")
+    for doc in top_docs:
+        print(doc.metadata)
+    print("===================================\n")
+    # 🔥 DEBUG END
 
     # ---- safety check ----
     if not top_docs:
@@ -189,3 +205,4 @@ Standalone Question:
     save_chat_history(session_id, history)
 
     return response.content, top_docs
+
